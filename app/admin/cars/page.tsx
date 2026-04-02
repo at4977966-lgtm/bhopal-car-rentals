@@ -1,12 +1,21 @@
 'use client';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
-import { CldUploadWidget } from 'next-cloudinary';
 import { createCar } from '../actions';
 import { Camera, Car as CarIcon, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 
+const CldUploadWidget = dynamic(
+  () => import('next-cloudinary').then((mod) => mod.CldUploadWidget),
+  { ssr: false }
+);
+
+const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
 export default function AdminCarsPage() {
   const [imageUrl, setImageUrl] = useState("");
+  const hasCloudinary = Boolean(cloudName);
+
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 mt-10">
@@ -49,14 +58,22 @@ export default function AdminCarsPage() {
 
         {/* Cloudinary Widget */}
         <div className="md:col-span-2">
-          <CldUploadWidget uploadPreset="bhopal_cars" onSuccess={(result: any) => setImageUrl(result.info.secure_url)}>
-            {({ open }) => (
-              <button type="button" onClick={() => open()} className="w-full py-10 border-2 border-dashed border-white/10 rounded-xl hover:bg-white/5 transition">
-                {imageUrl ? "✅ Photo Uploaded!" : "📸 Upload Car Photo"}
-              </button>
-            )}
-          </CldUploadWidget>
-          <input type="hidden" name="image" value={imageUrl} />
+          {hasCloudinary ? (
+            <>
+              <CldUploadWidget uploadPreset="bhopal_cars" onSuccess={(result: any) => setImageUrl(result.info.secure_url)}>
+                {({ open }) => (
+                  <button type="button" onClick={() => open()} className="w-full py-10 border-2 border-dashed border-white/10 rounded-xl hover:bg-white/5 transition">
+                    {imageUrl ? "✅ Photo Uploaded!" : "📸 Upload Car Photo"}
+                  </button>
+                )}
+              </CldUploadWidget>
+              <input type="hidden" name="image" value={imageUrl} />
+            </>
+          ) : (
+            <div className="rounded-xl border border-yellow-300/30 bg-yellow-400/10 p-4 text-sm text-yellow-200">
+              Cloudinary not configured. Set <code>NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME</code> in Vercel env vars to enable uploads.
+            </div>
+          )}
         </div>
 
         <button type="submit" className="md:col-span-2 py-4 bg-blue-600 rounded-xl font-bold hover:bg-blue-700">
